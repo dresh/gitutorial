@@ -2,8 +2,6 @@ hello my name is naveen
 
 helo my name is Ramji
 
-<<<<<<< HEAD
 Hi.. What the heck.
-=======
 hello ma name a Deepesh
->>>>>>> 151c4e55739378093535f332abc0d8ef4027d04c
+bjcjdkff
