@@ -1,0 +1,23 @@
+/settings.php
+files
+/*.project
+/*.buildpath
+/*.settings
+.gitignore
+dx
+
+# Ignore paths that contain generated content.
+files/
+sites/*/files
+sites/*/private
+
+# Ignore default text files
+robots.txt
+/CHANGELOG.txt
+/COPYRIGHT.txt
+/INSTALL*.txt
+/LICENSE.txt
+/MAINTAINERS.txt
+/UPGRADE.txt
+/README.txt
+

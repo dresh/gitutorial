@@ -1,0 +1,116 @@
+<?php
+/**
+ *Implements hook_schema()
+ */
+function school_schema(){
+    $schema ['sch_administrator']=  array(
+    'description '=>'Administrator table',
+    'fields' =>array(
+        'admin_id'=> array(
+            'description' =>'the primary identifier for administrator',
+            'type'=>'serial',
+            'unsigned'=>TRUE,
+            'not null'=>TRUE ),
+        'admin_name'=>array(
+            'description'=>'admin name',
+            'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        
+        'admin_email'=>array(
+            'description'=>'admin email id',
+            'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        ),
+         'primary key'=>array('admin_id'),
+        );
+   
+    
+    $schema ['sch_student']=  array(
+    'description '=>'Students table',
+    'fields' =>array(
+        'student_id'=> array(
+            'description' =>'the primary identifier for student',
+            'type'=>'serial',
+            'unsigned'=>TRUE,
+            'not null'=>TRUE ),
+        'student_name'=> array(
+           'description'=>'student name',
+           'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        'student_email'=> array(
+            'description'=>'student email id',
+            'type'=>'varchar',
+           'length'=>32,
+            'not null'=>TRUE),
+        'student_dob'=> array(
+            'type'=>'int',
+            'not null'=>TRUE),
+       ),
+         'primary key'=> array('student_id'),
+        );
+    
+    $schema ['sch_teacher']=  array(
+    'description '=>'Teachers table',
+    'fields' =>array(
+        'teacher_id'=> array(
+            'description' =>'the primary identifier for teacher',
+            'type'=>'serial',
+            'unsigned'=>TRUE,
+            'not null'=>TRUE ),
+        'teacher_name'=>array(
+            'description'=>'teacher name',
+            'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        'teacher_email'=>array(
+            'description'=>'teacher email id',
+            'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        'teacher_dob'=>array(
+            'description'=>'teacher DOB',
+            'type'=>'int',
+            'not null'=>TRUE),
+        ),
+        'primary key'=>array('teacher_id'),
+        );
+    $schema ['sch_subject']=  array(
+    'description '=>'Subjects table',
+    'fields' =>array(
+        'subject_id'=> array(
+            'description' =>'the primary identifier for subject',
+            'type'=>'serial',
+            'unsigned'=>TRUE,
+            'not null'=>TRUE ),
+        'subject_name'=>array(
+            'description'=>'subject name',
+            'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        ),
+        'primary key'=>array('subject_id'),
+        );
+     $schema ['sch_class']=  array(
+    'description '=>'Class table',
+    'fields' =>array(
+        'class_id'=> array(
+            'description' =>'the primary identifier for class',
+            'type'=>'serial',
+            'unsigned'=>TRUE,
+            'not null'=>TRUE ),
+        'class_name'=>array(
+            'description'=>'class name',
+            'type'=>'varchar',
+            'length'=>32,
+            'not null'=>TRUE),
+        ),
+        
+         'primary key'=>array('class_id'),
+        );
+    
+   
+     return $schema;
+}
