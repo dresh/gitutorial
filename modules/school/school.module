@@ -4,7 +4,39 @@
  * school module
  * 
  */
+/*
+ * permission
+ */
+define('CONST_PERM_TEACHER_ADD_Subject','School Teacher add sujects');
+define('CONST_PERM_ADMIN_ADD_TEACHER','School Admin add Teacher');
+define('CONST_PERM_TEACHER_ADD_CLASS','School Teacher add class');
+define('CONST_PERM_ADMIN_ADD_STUDENT','School Admin add student');
+define('CONST_PERM_VIEW_STUDENT','School student view');
+define('CONST_PERM_VIEW_TEACHER','School teacher view');
+define('CONST_PERM_SCHOOL_ADMIN','Access school admin menu');
+define('CONST_PERM_CLASS_SUBJECT_VIEW','Access Class Subject view');
 
+function school_permission(){
+  $permission = array(
+  CONST_PERM_SCHOOL_ADMIN =>array('title'=>t('Access school admin menu')),
+  CONST_PERM_VIEW_TEACHER=>array('title'=>t('School teacher view')),  
+  CONST_PERM_VIEW_STUDENT=>array('title'=>t('School student view')),
+  CONST_PERM_ADMIN_ADD_STUDENT=>array('title'=>t('School Admin add student')),
+  CONST_PERM_TEACHER_ADD_CLASS=>array('title'=>t('School Teacher add class')),
+  CONST_PERM_ADMIN_ADD_TEACHER=>array('title'=>t('School Admin add teacher')), 
+  CONST_PERM_TEACHER_ADD_Subject=>array('title'=>t('School Teacher add sujects')), 
+  CONST_PERM_CLASS_SUBJECT_VIEW=>array('title'=>t('Access Class Subject view')),
+    );
+  $result =db_select('role','r')
+      ->fields('r',array('name'))
+      ->execute();
+  foreach($result as $row){
+    $permission['school role permission'.$row->name] = array(
+      'title'=>t('has %role role',array(
+        '%role'=>$row->name)));
+  }
+  return  $permission;
+}
 function school_help($path,$arg){
     switch($path){
         case "admin/help#school";
@@ -13,6 +45,7 @@ function school_help($path,$arg){
     }
 }
 function school_menu(){
+    //add file uploader
     $items ['file-uploader'] = array(
         'title'=> 'Upload A File',
         'type'=> MENU_NORMAL_ITEM,
@@ -21,8 +54,79 @@ function school_menu(){
         'page arguments'=>array('school_import_form'),
         'access callback'=>TRUE,
     );
-   return $items;
+    //Add student form
+    $items ['add-student'] = array(
+        'title'=> 'Student form',
+        'type'=> MENU_NORMAL_ITEM,
+        'description'=>'basic details of students',
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('school_student_form'),
+        'access arguments'=>array(CONST_PERM_ADMIN_ADD_STUDENT),
+        'access callback'=>TRUE,
+        );
+    //Edit student form
+    $items ['editstudent/%/edit']=array(
+        'title'=> 'Edit Student',
+        'type'=> MENU_CALLBACK,
+        'description'=>'edit details of students',
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('edit_student_form',1),
+        'access callback'=>'user_access',
+       
+        
+    );
+    //View students stored
+    $items ['students_list page']=array(
+         'title'=> 'View Student List',
+        'type'=> MENU_NORMAL_ITEM,
+        'description'=>'view details of students',
+        'page callback'=>'student_view_list',
+        'access callback'=>'user_access',
+        'access arguments'=>array('access student content'),
+    );
+    //single student view
+    $items['studentview_page/%']=array(        
+        'title'=>'single student view',
+        'description'=>'single student view',
+        'page callback' => 'studentview_page',
+        'page arguments' => array(1),
+        'access callback'=>'user_access',
+        'access arguments' => array('access student content'),
+        'type' => MENU_NORMAL_ITEM,
+        );
+        
+    //add teacher form
+    $items ['add-teacher'] = array(
+        'title'=> 'Teacher form',
+        'type'=> MENU_NORMAL_ITEM,
+        'description'=>'basic details of teacher',
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('school_teacher_form'),
+        'access arguments' => array('access school content'),
+        'access callback'=>TRUE,
+        );
     
+    //add subject form
+    $items ['add-subject'] = array(
+        'title'=> 'Subject form',
+        'type'=> MENU_NORMAL_ITEM,
+        'description'=>'basic details of subject',
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('school_subject_form'),
+       'access arguments' => array('access school content'),
+        'access callback'=>TRUE,
+        );
+    //add class form
+    $items ['add-class'] = array(
+        'title'=> 'Class form',
+        'type'=> MENU_NORMAL_ITEM,
+        'description'=>'basic details of class',
+        'page callback'=>'drupal_get_form',
+        'page arguments'=>array('school_class_form'),
+       'access arguments' => array('access school content'),
+        'access callback'=>TRUE,
+        );
+   return $items;
 }
 function school_import_form($form,&$form_state){
      $form['notes'] = array(
@@ -46,9 +150,354 @@ function school_import_form($form,&$form_state){
   );
   return $form;
 }
-function school_import_form_submit($form,$form_state){
+    /*
+     * Get student form
+     */
+    function school_student_form($form,$form_state){
+        $form['student_name'] =array(
+        '#title' =>t('student_name'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+        
+        $form['student_email']=array(
+        '#title' =>t('student_email'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+        $form['student_dob']=array(
+        '#title' =>t('student_dob'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+        $form['submit']=array(
+        '#value' => 'submit',
+        '#type'=> 'submit',
+        );
+        return $form;
     
 }
-function school_import_batchprocessing(){
+/*
+ * Store student in database
+ */
+        function school_student_form_submit($form,&$form_state) {
+            $sql_query =db_insert('sch_student')
+                        ->fields(array(
+                'student_name' => $form_state['values']['student_name'],
+                'student_email' =>$form_state['values']['student_email'],
+                'student_dob'=>$form_state['values']['student_dob'],
+                
+            )
+          )
+            ->execute();
+             drupal_set_message("deatils saved");
+             drupal_goto('students_list page');
+        }
+ /*
+  * View student list
+  */
+        function student_view_list(){
+            $sql_select=  db_select('sch_student','students')
+                    ->fields('students',array('student_id','student_name','student_email','student_dob'))
+                    ->execute();
+            $header= array('student_id','student_name','student_email','student_dob','action');
+            $rows = array();
+            while($data=$sql_select->fetchObject()){
+                $rows[]=array(
+                    l($data->student_id,'studentview_page/'.$data->student_id),
+                    $data ->student_name,
+                    $data->student_email,
+                    $data->student_dob,
+                    l('action',"editstudent/$data->student_id/edit"),
+                    );
+            }
+            $output = theme_table(
+		    array(
+		      "header" => $header,
+		      "rows" => $rows,
+		      "attributes" => array(),
+		      "sticky" => true, // Table header will be sticky
+		      "caption" => "",
+		      "colgroups" => array(),
+		      "empty" => t("Table has no data!") // The message to be displayed if table is empty
+		    )
+	  );
+          return $output;
+        }
+        /*
+         * Single student view
+         */
+        function studentview_page($student_id){
+            $output = drupal_get_form('school_student_form');
+            $sql_select1 = db_select('sch_student','students')
+                       ->fields('students',array('student_id','student_name','student_email','student_dob'))
+                       ->condition('student_id',$student_id,'=')
+                       ->execute(); 
+            $header= array('student_id','student_name','student_email','student_dob');
+            $rows = array();
+            while($data=$sql_select1->fetchObject()){
+                $rows[]=array(
+                    $data->student_id,
+                    $data ->student_name,
+                    $data->student_email,
+                    $data->student_dob,
+                    );
+            }
+            $output = theme_table(
+		    array(
+		      "header" => $header,
+		      "rows" => $rows,
+		      "attributes" => array(),
+		      "sticky" => true,
+		      "caption" => "",
+		      "colgroups" => array(),
+		      "empty" => t("Table has no data!")
+		    )
+	  );
+          return $output;
+            
+        }
+     /*
+      * Edit student details
+      */
+        function edit_student_form($form,$form_state,$student_id){
+            $sql_select = db_select('sch_student','students')
+                     ->fields('students',array('student_name','student_email','student_dob'))
+                     ->condition('student_id',$student_id,'=')
+                     ->execute()
+                     ->fetchObject();
+            
+                $form['student_id'] = array(
+                '#type' => 'hidden',
+                '#value' => $student_id,
+                );
+                $form['student_name']= array(
+                    '#type'=>'textfield',
+                    '#title'=>t('student_name'),
+                    '#default_value'=>$sql_select->student_name,
+                );
+                $form['student_email']= array(
+                    '#type'=>'textfield',
+                    '#title'=>t('student_email'),
+                    '#default_value'=>$sql_select->student_email,
+                );
+                $form['student_dob']= array(
+                    '#type'=>'textfield',
+                    '#title'=>t('student_dob'),
+                    '#default_value'=>$sql_select->student_dob,
+                );
+                $form['submit'] = array(
+                '#type' => 'submit',
+                '#value' => 'Submit',
+                '#submit' => array('editstudent_form_submit'),   
+                );
+                return $form;
+                
+        }
+        /*
+         * Edit student form submit
+         */
+        function editstudent_form_submit($form,$form_state){
+            $student_name = $form_state['values']['student_name'];
+            $student_email= $form_state['values']['student_email'];
+            $student_dob= $form_state['values']['student_dob'];
+            $student_id= $form_state['values']['student_id'];
+            
+           
+            $values = array(
+                'student_name' =>$student_name,
+                'student_email'=>$student_email,
+                'student_dob'=>$student_dob,
+            );
+           
+             db_update('sch_student')
+                    ->fields($values)
+                    ->condition('student_id',$student_id,'=')
+                    ->execute();
+            drupal_set_message(t('Changes updated'));
+            drupal_goto('students_list page');
+            
+        }
+    /*
+    * Get Teacher form
+    */
+    function school_teacher_form($form,$form_state){
+        $form['teacher_name'] =array(
+        '#title' =>t('teacher_name'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+        
+        $form['teacher_email']=array(
+        '#title' =>t('teacher_email'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+        $form['teacher_dob']=array(
+             
+        '#title' =>t('teacher_dob'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+        $form['submit']=array(
+        '#value' => 'submit',
+        '#type'=> 'submit',
+        );
+        return $form;
+    }
+    /*
+    * Store teacher in database
+    */
+     function school_teacher_form_submit($form,&$form_state) {
+            $sql_query1 =db_insert('sch_teacher')
+                        ->fields(array(
+                'teacher_name' => $form_state['values']['teacher_name'],
+                'teacher_email' =>$form_state['values']['teacher_email'],
+                'teacher_dob' =>$form_state['values']['teacher_dob'],
+                
+            )
+          )
+            ->execute();
+             drupal_set_message("deatils saved");
+        }  
+    /*
+     * Get subject form
+    */
+    function school_subject_form($form,$form_state){
+        $form['subject_name'] =array(
+        '#title' =>t('subject_name'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+         $form['submit']=array(
+        '#value' => 'submit',
+        '#type'=> 'submit',
+        );
+        return $form;
+        
+    }
+    /*
+    * Store subject in database
+    */
+     function school_subject_form_submit($form,&$form_state) {
+            $sql_query2 =db_insert('sch_subject')
+                        ->fields(array(
+                'subject_name' => $form_state['values']['subject_name'],
+                
+            )
+          )
+            ->execute();
+             drupal_set_message("deatils saved");
+        }
+        
+     /*
+     * Get class form
+    */
+    function school_class_form($form,$form_state){
+        $form['class_name'] =array(
+        '#title' =>t('class_name'),
+        '#type' => 'textfield',
+        '#required' => TRUE,
+        );
+         $form['submit']=array(
+        '#value' => 'submit',
+        '#type'=> 'submit',
+        );
+        return $form;
+        
+    }   
+    /*
+    * Store class in database
+    */
+     function school_class_form_submit($form,&$form_state) {
+            $sql_query2 =db_insert('sch_class')
+                        ->fields(array(
+                'class_name' => $form_state['values']['class_name'],
+                
+            )
+          )
+            ->execute();
+             drupal_set_message("deatils saved");
+        }
+        
+        
+/*
+    function school_import_form_submit($form,$form_state){
+     $transaction =$db_transaction();
+     $file =$form_state['storage']['$file'];
+      /*  $db_insert('sch_student')->
+           fields(array(
+                   'student_id'=>$form_state['values']['student_id'],
+                   'student_name'=>$form_state['values']['student_name'],
+                   'student_email'=>$form_state['values']['student_email'],
+                   ))
+           ->execute();
+   
+  // $row =1;
+    //$handle=  fopen('student_importer.csv', "r");
+   if(($handle=  fopen('student_importer.csv', "r"))!==FALSE){
+       while(($data=  fgetcsv($handle, 100,","))!== FALSE){
+         //  $num =count($data);
+          // echo $num;
+          // $row++;
+           $operations =array(
+           'school_import_batchprocessing',array($data),
+           );
+        }
+        $batch = array(
+            'title'=>t("Importing file.."),
+            'operations'=>$operations,
+            'finished' => 'school_import_finished',
+            'error_message'=>t('importing encountered error'),
+            );
+        batch_set($batch);
+        fclose($handle);
+   }
+   
+   $csv_uri = $node->field_csv_file['und'][0]['uri'];
+   $handle = fopen($csv_uri, 'r');
+   
+    $row = fgetcsv($handle);
+    $columns = array();
+    foreach ($row as $i => $header) {
+    $columns[$i] = trim($header);
+    }
+    while ($row = fgetcsv($handle)) {
+  $record = array();
+  foreach ($row as $i => $field) {
+       $record[$columns[$i]] = $field;
+  }
+  drupal_write_record('sch_student', $record);
+}
+  fclose($handle);
+}
+
+
+function school_import_batchprocessing($data){
+    $student_id =$data[0];
+    $student_name=$data[1];
+    $student_email =$data[2];
+    
+    $node = new stdClass();
+    $node ->type='page';
+    $node ->status =1; //published automaticaly
+    $node ->$student_id;
+    $node ->$student_name;
+    $node ->$student_email;
+    
+    node_save($node);
     
 }
+function school_import_finished(){
+    drupal_set_message("Importing is finished");
+}
+      
+*/
+        
+                  
+       function school_views_api(){
+        return array(
+        'api'=>3,
+        'path'=>  drupal_get_path('module', 'school'),
+        );
+} 

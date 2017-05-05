@@ -1,4 +1,6 @@
 name = school
 description = provides information about school management
 core = 7.x
-files[]=studentImporter.inc
+
+
+files[]=school.views.inc
