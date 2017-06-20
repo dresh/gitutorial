@@ -1,0 +1,28 @@
+<?php
+/*
+ * Implements hook_enable()
+ */
+ function sch_importer_enable(){
+   //clears all cache display from feeds
+   cache_clear_all('plugins:feeds:plugins', 'cache');
+ }
+/*
+ * Implements hook_feeds_plugin()
+ */
+ function sch_importer_feeds_plugins(){
+   $info = array();
+   $info['FeedsImporterSchoolStudentsUpload'] = array(
+    'name' => 'Upload school students details',
+    'description' => 'Imports school students details',
+    'handler' => array(
+      'parent' => 'FeedsProcessor', // A plugin needs to derive either directly or indirectly from FeedsFetcher, FeedsParser or FeedsProcessor.
+      'class' => 'FeedsImporterSchoolStudentsUpload',
+      'file' => 'FeedsImporterSchoolStudentsUpload.inc',
+      'path' => drupal_get_path('module', 'sch_importer'),
+    ),
+  );
+   return $info;
+ }
+
+
+

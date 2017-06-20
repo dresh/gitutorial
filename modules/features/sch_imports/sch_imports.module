@@ -1,0 +1,6 @@
+<?php
+/*
+ * @file
+ * Code to include School Imports
+ */
+include_once 'sch_imports.features.inc';

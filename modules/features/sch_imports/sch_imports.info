@@ -1,0 +1,17 @@
+name = School Imports Feature
+core = 7.x
+package = school
+version = 7.x-1.0
+project = sch_imports
+dependencies[] = ctools
+dependencies[] = entityreference
+dependencies[] = features
+dependencies[] = feeds
+dependencies[] = sch_importer
+dependencies[] = school
+dependencies[] = options
+dependencies[] = taxonomy
+dependencies[] = text
+features[ctools][] = feeds:feeds_importer_default:1
+features[features_api][] = api:2
+features[feeds_importer][] = school_students_upload

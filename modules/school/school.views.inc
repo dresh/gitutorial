@@ -27,6 +27,12 @@ function _school_sch_student(&$data){
         'handler' => 'views_handler_field',
         'click sortable' => TRUE,
      ),
+       'filter' => array(
+      'handler' => 'views_handler_filter'
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort'
+    ),
     );
     $data['sch_student']['student_name'] = array(
         'title'=>'Student_Name',
@@ -49,7 +55,7 @@ function _school_sch_student(&$data){
         'title'=>'Student_dob',
         'help'=>t('Student_dob'),
         'field'=>array(
-        'handler' => 'views_handler_field',
+        'handler' => 'views_handler_field_date',
         
      ),
     );
@@ -94,7 +100,7 @@ function _school_sch_teacher(&$data){
         'title'=>'Teacher_dob',
         'help'=>t('Teacher_dob'),
         'field'=>array(
-        'handler' => 'views_handler_field',
+        'handler' => 'views_handler_field_date',
         
      ),
     );

@@ -1,0 +1,10 @@
+name=School Bulk Upload
+description=school bulk upload
+core = 7.x
+package = school
+
+
+dependencies[] = feeds
+dependencies[] = feeds_ui
+
+files[] = FeedsImporterSchoolStudentsUpload.inc
