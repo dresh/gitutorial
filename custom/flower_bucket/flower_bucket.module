@@ -1,0 +1,718 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ * Menu links for Flower Bouquet Module
+ */
+
+function flower_bucket_menu() {
+
+  $items = array();
+
+  $items['createflowersform'] = array(
+    'title' => 'Create Flower',
+    'access callback' => True,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('create_flower_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'menu' => 'navigation',
+    );
+
+  $items['createbucketform'] = array(
+    'title' => 'Create Bouquet',
+    'access callback' => True,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('create_bucket_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'menu' => 'navigation',
+    );
+
+  $items['showflowerdata'] = array(
+    'title' => 'Flower Data',
+    'access callback' => True,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flower_blocks_display_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'menu' => 'navigation',
+    );
+
+  $items['flower_autocomplete_p'] = array(
+    'page callback' => 'flower_autocomplete',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+    );
+
+  $items['flower/edit/%'] = array(
+    'title' => 'Edit Flower Data',
+    'access callback' => True,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('edit_flowers_data_form',2),
+    'type' => MENU_NORMAL_ITEM,
+    );
+
+  $items['show_flower_bucket'] = array(
+    'title' => 'Flower Bouquets',
+    'access callback' => True,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flowerbucket_blocks_display_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'menu' => 'navigation',
+    );
+
+  return $items;
+
+}
+
+
+/**
+ * Form for creating new flowers(multiple flowers).
+ */
+function create_flower_form($form, &$form_state, $no_js_use = FALSE) {
+
+  $form['flowers'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Create your flowers',
+    '#prefix' => '<div id="flowers">',
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+    );
+
+  if (!array_key_exists('clicked_button', $form_state)) {
+    $form['flowers']['name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Flower Name'),
+      );
+
+     $form['flowers']['qty'] = array(
+      '#type' => 'textfield',
+      '#attributes' => array(
+        ' type' => 'number', // insert space before attribute name :)
+        ),
+      '#title' => t('Flower Qty'),
+      );
+
+    $form['flowers']['color'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Flower Color'),
+      );
+
+  }else{
+
+    $last = count($form_state['storage']['flowersdata']);
+
+    //header for showing flowers data in tabular form.
+    $header = array('name' => t('name'),
+      'color' => t('color'),
+      'qty' => t('qty'));
+
+    if(trim($form_state['input']['flowers']['name']) != "" && trim($form_state['input']['flowers']['qty']) != ""  && trim($form_state['input']['flowers']['color']) != ""){
+
+      $dup = False;  //flag for checking duplicating entry in $form_state['storage']['flowersdata']
+
+      //checking duplicate entry of flower and if flowers entry present the just update the flower count
+      for($jj=0;$jj<sizeof($form_state['storage']['flowersdata']);$jj++){
+
+        //checking flower name and flower color  exist or not . If exist update flower qty
+        if($form_state['input']['flowers']['name'] == $form_state['storage']['flowersdata'][$jj]['name']
+          && $form_state['input']['flowers']['color'] == $form_state['storage']['flowersdata'][$jj]['color']){
+          $dup=True;
+        $form_state['storage']['flowersdata'][$jj]['qty']=$form_state['storage']['flowersdata'][$jj]['qty']+$form_state['input']['flowers']['qty'];
+      }
+    }
+    
+//IF Duplicate entry for flower not exist create new entry in storage form
+    if(!$dup){
+      $form_state['storage']['flowersdata'][$last] = array(
+        'name' => $form_state['input']['flowers']['name'],
+        'color' => $form_state['input']['flowers']['color'],
+        'qty' => $form_state['input']['flowers']['qty'],
+        );
+    }
+
+    unset($form_state['input']['flowers']['name']);
+    unset($form_state['input']['flowers']['color']);
+    unset($form_state['input']['flowers']['qty']);
+
+  }
+
+//Creating table view for storage form data if $form_state['storage']['flowersdata'] exist
+  if(sizeof($form_state['storage']['flowersdata'])>0){
+    $form['flowers']['table'] = array(
+      '#theme'  => 'table',
+      '#header' => $header,
+      '#rows'   => $form_state['storage']['flowersdata'],
+      '#empty'  => t('No form blocks found'),
+      );
+  }
+
+  $form['flowers']['name'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Flower Name'),
+    );
+
+ $form['flowers']['qty'] = array(
+      '#type' => 'textfield',
+      '#attributes' => array(
+        ' type' => 'number', // insert space before attribute name :)
+        ),
+      '#title' => t('Flower Qty'),
+      );
+
+  $form['flowers']['color'] = array(
+    '#type'  => 'textfield',
+    '#title' => t('Flower Color'),
+    );
+
+}
+
+$form['add_more'] = array(
+  '#type'     => 'button',
+  '#value'    => t('Add Flowers'),
+  '#callback' => 'validate_create_flower_form',
+  '#ajax'     => array(
+    'callback' => 'ajax_simplest_callback',
+    'wrapper'  => 'flowers',
+    'method'   => 'replace',
+    ),
+  );
+
+
+$form['submit'] = array(
+  '#type'  => 'submit',
+  '#value' => t('Submit'),
+  );
+$form['#submit'][] = 'validate_create_new_flower';
+
+return $form;
+
+}
+
+
+/**
+ * Function for creating multiple flower using ajax
+ */
+function ajax_simplest_callback($form, &$form_state) {
+
+  //validation for adding flowers in bouquets
+  if(trim($form_state['values']['flowers']['name']) == ""){
+    form_set_error('name', 'Flower Name field is required.');
+  }
+  if(trim($form_state['values']['flowers']['qty']) == ""){
+    form_set_error('qty', 'Flower Qty field is required.');
+  }
+  if(trim($form_state['values']['flowers']['color']) == ""){
+    form_set_error('color', 'Flower Color field is required.');
+  }
+
+  return $form['flowers'];
+}
+
+//validation for create new flower form after submitting the form
+function validate_create_new_flower($form, &$form_state){
+  if(!isset($form_state['storage']['flowersdata'])){
+   form_set_error('flowersdata', 'No flower added.');
+ }else{
+  new_flowers_form_submit($form,$form_state);
+ }
+}
+
+
+/**
+ * Function for submitting flowers data
+ */
+function new_flowers_form_submit($form, &$form_state){
+ 
+  foreach($form_state['storage']['flowersdata'] as $key => $value){
+    //checking same flower present db
+    $flw = db_select('flowers','f')
+    ->fields('f')
+    ->condition('name', $value['name'])
+    ->condition('color', $value['color'])
+    ->execute()
+    ->fetchAll(PDO::FETCH_ASSOC);
+
+//if same flower exist in db just updating its count else creating new entry
+    if(sizeof($flw)>0){
+     db_update('flowers')
+     ->fields(array(
+      'qty' => $flw[0]['qty'] + $value['qty'],
+      ))
+     ->condition('name', $value['name'])
+     ->condition('color', $value['color'])
+     ->execute();
+   }else{
+     $insert = db_insert('flowers')
+     -> fields(array(
+      'name' => $value['name'],
+      'color' =>$value['color'],
+      'qty' =>$value['qty'],
+      ))
+     ->execute();
+   }
+ }
+ drupal_set_message(t('Form successfully saved'));
+}
+
+/**
+ * Form for creating bouquet.
+ */
+function create_bucket_form($form, &$form_state){
+
+ $flowerArray = getFlowerArray();
+
+ $form['input']['bucket']['name'] = array(
+  '#type' => 'textfield',
+  '#title' => t('Bouquet Name'),
+  '#required' => True,
+  
+  );
+
+ $form['bucket_flower'] = array(
+  '#type' => 'fieldset',
+  '#title' => 'Select Your Flowers Qty',
+  '#prefix' => '<div id="bucket" >',
+  '#suffix' => '</div>',
+  '#tree' => TRUE,
+  );
+
+ if (array_key_exists('clicked_button', $form_state)) {
+
+   $last = sizeof($form_state['storage']['bucket_flower']);
+
+   //getting flower count for selected flower for checking whether sufficient quantity is present or not
+   $flcount =  getFlowerCount($form_state['input']['bucket_flower']['flower_name'],$form_state['input']['bucket_flower']['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color']);
+
+  //validate or updating the flower quantity
+   if(trim($form_state['input']['bucket_flower']['flower_name']) != "" && trim($form_state['input']['bucket_flower']['flower_qty']) != "" && trim($form_state['input']['bucket_flower']['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color']) != ""){
+    $dup = False;
+
+    if(sizeof($form_state['storage']['bucket_flower'])>0){
+      for($jj=0;$jj<sizeof($form_state['storage']['bucket_flower']);$jj++){
+       if($form_state['input']['bucket_flower']['flower_name'] == $form_state['storage']['bucket_flower'][$jj]['flower_name']
+        && $form_state['input']['bucket_flower']['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color'] == $form_state['storage']['bucket_flower'][$jj]['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color']){
+
+         $dup=True;
+       if($flcount-$form_state['storage']['bucket_flower'][$jj]['flower_qty']-$form_state['input']['bucket_flower']['flower_qty']>=0){
+
+        $form_state['storage']['bucket_flower'][$jj]['flower_qty']=$form_state['storage']['bucket_flower'][$jj]['flower_qty']+$form_state['input']['bucket_flower']['flower_qty'];
+      }else{
+        form_set_error('qty', 'Insufficient Flower Qty ');
+      }
+
+    }
+  }
+}else if($flcount-$form_state['input']['bucket_flower']['flower_qty']<0){
+  $dup=True;
+  form_set_error('qty', 'Insufficient Flower Qty ');
+}
+
+//creating entry for flower when $dup flag is false
+if(!$dup) $form_state['storage']['bucket_flower'][$last]= $form_state['input']['bucket_flower'];
+
+
+unset($form_state['input']['bucket_flower']['flower_name']);
+unset($form_state['input']['bucket_flower']['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color']);
+unset($form_state['input']['bucket_flower']['flower_qty']);
+}
+$header = array('name' => t('name'),
+  'color' => t('color'),
+  'qty' => t('qty'));
+
+$options=array();
+foreach($form_state['storage']['bucket_flower'] as $i => $value){
+  $options[$i] = array(
+    'name' => $value['flower_name'],
+    'color' =>$value['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color'],
+    'qty' =>  $value['flower_qty'],
+    );
+}
+
+if(sizeof($form_state['storage']['bucket_flower'])>0){
+  $form['bucket_flower']['table'][$last] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $options,
+    '#empty' => t('No form blocks found'),
+    );
+}
+
+}
+
+//flower autocomplete
+$form['bucket_flower']['flower_name'] = array(
+  '#type' => 'textfield',
+  '#title' => t("Flower Name"),
+  '#autocomplete_path' => 'flower_autocomplete_p',
+  '#ajax' => array(
+    'event'=>'change',
+    'callback' =>'sandbox_ajax_dropdown_color',
+    'wrapper' => 'color-wrapper',
+    ),
+  );
+
+$form['bucket_flower']['sandbox_ajax_dropdown']['wrapper'] = array(
+  '#prefix' => '<div id="color-wrapper">',
+  '#suffix' => '</div>',
+  );
+
+//getting flower color based on selected flower
+$options = array();
+
+if (isset($form_state['values']['bucket_flower']['flower_name'])) {
+  $options = _load_color($form_state['values']['bucket_flower']['flower_name']);
+}
+
+$form['bucket_flower']['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color'] = array(
+  '#title' => t('Flower Color'),
+  '#type' => 'select',
+  '#options' => $options,
+  );
+
+$form['bucket_flower']['flower_qty'] = array(
+  '#type' => 'textfield',
+  '#title' => t('Quantity'),
+  '#attributes' => array(
+    ' type' => 'number', 
+    ),
+  );
+
+$form['add_more'] = array(
+  '#type' => 'button',
+  '#value' => t('Add Flower'),
+  '#ajax' => array(
+    'callback' => 'ajax_simplest_callback_bucket',
+    'wrapper' => 'bucket',
+    'method' => 'replace',
+    ),
+  );
+
+$form['submit'] = array(
+  '#type' => 'submit',
+  '#value' => t('Create Bouquet'),
+  );
+$form['#submit'][] = 'validate_new_bucket_form_submit';
+return $form;
+
+}
+
+
+function ajax_simplest_callback_bucket($form, &$form_state) {
+  if(trim($form_state['values']['bucket_flower']['flower_name']) == ""){
+    form_set_error('name', 'Flower Name field is required.');
+  }
+  if(trim($form_state['values']['bucket_flower']['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color']) == ""){
+    form_set_error('color', 'Flower Color field is required.');
+  }
+
+  if(trim($form_state['values']['bucket_flower']['flower_qty']) == ""){
+    form_set_error('qty', 'Flower Qty field is required.');
+  }
+  return $form['bucket_flower'];
+}
+
+
+/**
+ * Function for displaying all flowers data
+ */
+function flower_blocks_display_form($form, &$form_state) {
+  $form = array();
+
+  $result = db_select('flowers', 'n')
+  ->fields('n', array(
+    'name',
+    'color',
+    'qty','id'))
+  ->execute();
+  
+  $header = array('name' => t('Name'),
+    'color' => t('Color'),
+    'qty' => t('Qty'),
+    'action'=>t('Action'));
+  $options = array();
+  $i=0;
+  foreach ($result as $row) {
+    $options[$i] = array(
+      'name' => $row->name,
+      'color' => $row->color,
+      'qty' => $row->qty,
+      'action' => l('Edit', "flower/edit/".$row->id,array('absolute'=>True))
+      );
+    $i++;
+  }
+
+
+  $form['table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $options,
+    '#empty' => t('No form blocks found'),
+    );
+
+  return $form;
+}
+
+/**
+ * Function for updating flowers data count
+ */
+function updateFlowerCount($flwname,$flwcolor,$qty){
+ $flwArr= db_select('flowers','f')
+ ->fields('f')
+ ->condition('name', $flwname)
+ ->condition('color', $flwcolor)
+ ->execute()
+ ->fetch(PDO::FETCH_ASSOC);
+
+
+ db_update('flowers')
+ ->fields(array(
+  'qty' => $flwArr['qty']- $qty,
+  ))
+ ->condition('id', $flwArr['id'])
+ ->execute();
+
+ return $flwArr['id'];
+}
+
+
+/**
+ * Function to get all flowers data.
+ */
+
+function getFlowerArray(){
+  $flower = db_select('flowers')
+  ->fields('flowers', array('name','color','qty'))
+  ->execute()
+  ->fetchAll(PDO::FETCH_ASSOC);
+
+  $flowerArr = array();
+
+  for($i=0;$i<sizeof($flower);$i++){
+    $flowerArr[$i]['name'] = $flower[$i]['name'];
+    $flowerArr[$i]['color'] = $flower[$i]['color'];
+    $flowerArr[$i]['qty']= $flower[$i]['qty'];
+  }
+  
+  return $flowerArr;
+}
+
+
+/**
+* Function validating bouquet data
+*/
+function validate_new_bucket_form_submit($form, &$form_state){
+  if(!isset($form_state['storage']['bucket_flower'] )){
+   form_set_error('name', 'No flower added. Please add some flower to create bouquet');
+ }else{
+  new_bucket_form_submit($form,$form_state);
+ }
+}
+
+/**
+ * Function for submitting bouquet data
+ */
+
+function new_bucket_form_submit($form, &$form_state){
+  
+//create new record for bucket
+  $bucket = db_insert('buckets')
+  ->fields(array('name' =>$form_state['values']['name'],))
+  ->execute();
+
+  for($i=0;$i<count($form_state['storage']['bucket_flower']);$i++){
+
+  //updating flower count in flowers table
+   $flw =   updateFlowerCount( $form_state['storage']['bucket_flower'][$i]['flower_name'],  $form_state['storage']['bucket_flower'][$i]['sandbox_ajax_dropdown']['wrapper']['bucket_flower']['flower_color'],$form_state['storage']['bucket_flower'][$i]['flower_qty']);
+
+
+//checking same flower_id and bucket_id present or not
+   $flwb = db_select('flower_bucket','f')
+   ->fields('f')
+   ->condition('bucket_id', $bucket)
+   ->condition('flower_id',  $flw)
+   ->execute()
+   ->fetchAll(PDO::FETCH_ASSOC);
+
+//if present update the flower count else create new entry
+   if(sizeof($flwb)>0){
+    db_update('flower_bucket')
+    ->fields(array('qty' => $flwb[0]['qty']+ $form_state['storage']['bucket_flower'][$i]['flower_qty'],))
+    ->condition('bucket_id', $bucket)
+    ->condition('flower_id',  $flw)
+    ->execute();
+    
+  }else{
+   db_insert('flower_bucket')
+   ->fields(array('bucket_id' =>  $bucket,
+    'flower_id' => $flw,
+    'qty' => $form_state['storage']['bucket_flower'][$i]['flower_qty'],
+    ))
+   ->execute();
+ }
+
+}
+drupal_set_message(t('Your bucket created successfully'));
+}
+
+/**
+ * Function for autocomplete the flower name while creating bouquet
+ */
+function flower_autocomplete($text) {
+
+ $results = array();
+ $flowers= db_select('flowers','f')
+ ->fields('f')
+ ->condition('name', '%' . db_like($text) . '%', 'LIKE')
+ ->execute();
+ foreach ($flowers as $f) {
+  $results[$f->name] = check_plain($f->name);
+}
+drupal_json_output($results);
+
+}
+
+/**
+ * Function for loading all color for selected flower
+ */
+function _load_color($flowername) {
+  $color = array();
+  $result= db_select('flowers','f')
+  ->fields('f')
+  ->condition('name',  $flowername)
+  ->execute();
+
+  while($row = $result->fetchObject()){
+    $color[$row->color] = $row->color;
+  }
+  return $color;
+}
+
+function sandbox_ajax_dropdown_color($form, $form_state) {
+  return $form['bucket_flower']['sandbox_ajax_dropdown']['wrapper'];
+}
+
+/**
+ * Function for editing flowers data
+ */
+function edit_flowers_data_form($form,&$form_state,$id=0){
+ $flwArr= db_select('flowers','f')
+ ->fields('f')
+ ->condition('id', $id)
+ ->execute()
+ ->fetch(PDO::FETCH_ASSOC);
+
+ $form_state['storage']['id'] = $id;
+
+ $form['flowers']['name'] = array(
+  '#type' => 'textfield',
+  '#title' => t('Flower Name'),
+  '#required' => True,
+  '#default_value' => $flwArr['name'],
+  );
+
+ $form['flowers']['qty'] = array(
+  '#type' => 'textfield',
+  '#attributes' => array('type' => 'number',),
+  '#default_value' => $flwArr['qty'],
+  '#title' => t('Flower Qty'),
+  '#required' => True,
+  );
+
+ $form['flowers']['color'] = array(
+  '#type' => 'textfield',
+  '#title' => t('Flower Color'),
+  '#required' => True,
+  '#default_value' => $flwArr['color'],
+  );
+
+ $form['submit'] = array(
+  '#type' => 'submit',
+  '#value' => t('Save Flower'),
+  );
+ $form['#submit'][] = 'update_flower_data';
+
+ return $form;
+}
+
+/**
+ * Function for updating the flowers data
+ */
+function update_flower_data($form,&$form_state){
+ db_update('flowers')
+ ->fields(array(
+  'name' =>  $form_state['values']['name'],
+  'color' => $form_state['values']['color'],
+  'qty' => $form_state['values']['qty'],
+  ))
+ ->condition('id', $form_state['storage']['id'])
+ ->execute();
+ drupal_set_message(t('Form successfully saved'));
+}
+
+
+/**
+* Function for Showing Flower Bouquet Data
+*/
+
+function flowerbucket_blocks_display_form($form,&$form_state){
+  $bucketData = array();
+  $header = array('bouquet_name' => t('Bouquet Name'),
+    'color_name' => t('Color Name'),
+    'color' => t('Color'),
+    'qty' => t('Qty'),
+    );
+  $bucketObj = db_select('buckets','b')
+  ->fields('b', array('name','id'))
+  ->execute()
+  ->fetchAll(PDO::FETCH_ASSOC);
+
+  foreach($bucketObj as $keybuc => $buckObj){
+
+   $flowerbucketObj = db_select('flower_bucket','fb')
+   ->fields('fb', array('flower_id','qty'))
+   ->condition('bucket_id', $buckObj['id'])
+   ->execute()
+   ->fetchAll(PDO::FETCH_ASSOC);
+
+   $options = getFlowerBouquetData($flowerbucketObj,$buckObj['name']);
+
+   $form['table'][$keybuc] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $options,
+    '#empty' => t('No form blocks found'),
+    );
+ }
+ return $form;
+
+}
+
+
+function getFlowerBouquetData($value,$bouqname){
+  $options = array();
+  foreach($value as $key => $v){
+   $flwAss = db_select('flowers','fl')
+   ->fields('fl', array('name','color','qty'))
+   ->condition('fl.id', $v['flower_id'])
+   ->execute()
+   ->fetchAll(PDO::FETCH_ASSOC);
+
+   $options[$key] = array(
+    'bouquet_name' => $bouqname,
+    'color_name' => $flwAss[0]['name'],
+    'color' => $flwAss[0]['color'],
+    'qty' => $v['qty'],
+    );
+ }
+ return $options;
+}
+
+function getFlowerCount($flname,$flcolor){
+  $flwArr= db_select('flowers','f')
+  ->fields('f')
+  ->condition('name', $flname)
+  ->condition('color', $flcolor)
+  ->execute()
+  ->fetch(PDO::FETCH_ASSOC);
+  return  $flwArr['qty'];
+}
