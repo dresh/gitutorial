@@ -1,0 +1,5 @@
+name = Flower Bucket
+description = Module for flower bucket assignment
+core = 7.x
+
+

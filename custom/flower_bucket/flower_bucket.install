@@ -1,0 +1,89 @@
+<?php
+/**
+*Schema for Flower Bouquet Module
+*/
+function flower_bucket_schema() {
+
+  //Schema for Bouquet Table
+  $schema['buckets'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'serial',
+        'not null' => TRUE,
+        ),
+      'name' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'varchar',
+        'length' => '45',
+        'not null' => FALSE,
+        ),
+      ),
+    'primary key' => array('id'),
+    );
+
+//Schema for Flowers Table
+  $schema['flowers'] = array(
+    'description' => 'flower table',
+    'fields' => array(
+      'id' => array(
+        'description' => 'flower id',
+        'type' => 'serial',
+        'not null' => TRUE,
+        ),
+      'name' => array(
+        'description' => 'flower name',
+        'type' => 'varchar',
+        'length' => '45',
+        'not null' => FALSE,
+        ),
+      'qty' => array(
+        'description' => 'flower quantity',
+        'type' => 'int',
+        'not null' => FALSE,
+        ),
+      'color' => array(
+        'description' => 'flower color',
+        'type' => 'varchar',
+        'length' => '45',
+        'not null' => FALSE,
+        ),
+      ),
+    'primary key' => array('id'),
+    );
+
+// Schema for Flowers Bouquet Table
+  $schema['flower_bucket'] = array(
+    'description' => '',
+    'fields' => array(
+      'id' => array(
+        'description' => '',
+        'type' => 'serial',
+        'not null' => TRUE,
+        ),
+      'qty' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => FALSE,
+        ),
+      'flower_id' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => FALSE,
+        ),
+      'bucket_id' => array(
+        'description' => '',
+        'type' => 'int',
+        'not null' => FALSE,
+        ),
+      ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'flower_id_idx' => array('flower_id'),
+      'f_idx' => array('bucket_id'),
+      ),
+    );
+
+  return $schema;
+}
