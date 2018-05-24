@@ -1,0 +1,6 @@
+AAS = Alive and smiling
+ADN = Any day now
+AEAP = As early as possible
+AFAIK = As far as I know
+AFK = Away from keyboard
+AKA = Also known as

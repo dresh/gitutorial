@@ -1,0 +1,9 @@
+<TR>
+
+<TD height="30" valign="middle" bgcolor="#FFFFCC">
+
+<a href="links.php">New Section</a>
+
+</TD>
+
+</TR>
