@@ -1,0 +1,8 @@
+name = "User Information Module"
+description = "User Information View Module "
+core = 7.x
+package = "Views"
+version = 7.x-1.x
+dependencies[] = views
+files[] = users_information_view.module
+files[] = includes/users_information_views_default.inc

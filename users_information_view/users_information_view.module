@@ -1,0 +1,8 @@
+<?php
+
+function user_information_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'users_information_view') . '/includes',
+  );
+}

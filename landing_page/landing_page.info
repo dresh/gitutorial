@@ -1,0 +1,8 @@
+name = "Landing Page Module"
+description = "Landing Page Module"
+core = 7.x
+package = "Views"
+version = 7.x-1.x
+dependencies[] = views
+files[] = landing_page.module
+files[] = includes/landing_page_views_default.inc

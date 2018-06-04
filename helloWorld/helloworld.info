@@ -1,0 +1,5 @@
+name = "Hello World"
+description = "Demo module created"
+core = 7.x
+package = "Hello"
+version = 7.x-1.x
