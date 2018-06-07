@@ -1,0 +1,6 @@
+name = "movies"
+core = "7.x"
+description = "module to show movies"
+scripts[] = custom.js
+dependencies[] = views
+files[] = views/movies.views.inc

@@ -1,0 +1,158 @@
+<?php
+
+function movies_schema() {
+  $schema ['actors'] = array(
+    'description' => 'The base table for actors.',
+    'fields' => array(
+      'actor_id' => array(
+        'description' => 'The primary identifier for a actor.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'actor_name' => array(
+        'description' => 'The actor name.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'actor_gender' => array(
+        'description' => 'The actor gender.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'actor_dob' => array(
+        'description' => 'The actor dob.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'actor_bio' => array(
+        'description' => 'The actor dob.',
+        'type' => 'varchar',
+        'length' => 300,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      
+    ),
+    'primary key' => array('actor_id'),
+);
+
+$schema ['producers'] = array(
+    'description' => 'The base table for actors.',
+    'fields' => array(
+      'producer_id' => array(
+        'description' => 'The primary identifier for a producer.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'producer_name' => array(
+        'description' => 'The producer name.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'producer_gender' => array(
+        'description' => 'The producer gender.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'producer_dob' => array(
+        'description' => 'The producer dob.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'producer_bio' => array(
+        'description' => 'The producer dob.',
+        'type' => 'varchar',
+        'length' => 300,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      
+    ),
+    'primary key' => array('producer_id'),
+);
+
+$schema ['movies'] = array(
+    'description' => 'The base table for movies.',
+    'fields' => array(
+      'movie_id' => array(
+        'description' => 'The primary identifier for a movie.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'movie_name' => array(
+        'description' => 'The movie name.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'movie_year_release' => array(
+        'description' => 'The movie YOP.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'movie_plot' => array(
+        'description' => 'The movie plot.',
+        'type' => 'varchar',
+        'length' => 300,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'movie_poster' => array(
+        'description' => 'The movie poster.',
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'movie_producer' => array(
+        'description' => 'The movie producer.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('movie_id'),
+  );
+
+$schema ['movies_related_actors'] = array(
+    'description' => 'The base table for movies.',
+    'fields' => array(
+      'movie_id' => array(
+        'description' => 'The movie ID.',
+        'type' => 'int',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'actor_id' => array(
+        'description' => 'The producer ID.',
+        'type' => 'int',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('movie_id','actor_id'),
+  );
+
+  return $schema;
+} 

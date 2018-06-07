@@ -1,0 +1,418 @@
+<?php
+/*
+  Implementing hook_menu
+*/
+function movies_menu() {
+  $items = array();
+
+  $items['movies/add_actor'] = array( 
+    'title' => t('Add Actor'), 
+    'description' => 'Add an Actor',
+    'page callback' => 'add_actor_callback', 
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+    'menu_name' => 'main-menu',
+    'weight' => 1,
+  );
+
+   $items['movies/add_producer'] = array( 
+    'title' => t('Add Producer'), 
+    'description' => 'Add a Producer',
+    'page callback' => 'add_producer_callback', 
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+    'menu_name' => 'main-menu',
+    'weight' => 2,
+  );
+
+   $items['movies/add_movie'] = array( 
+    'title' => t('Add movie'), 
+    'description' => 'Add a Movie',
+    'page callback' => 'add_movie_callback', 
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+    'menu_name' => 'main-menu',
+    'weight' => 3,
+  );
+
+  $items['actors/autocomplete'] = array(
+    'title' => 'Autocomplete for Actors',
+    'page callback' => 'actors_autocomplete',
+    'access arguments' => array('use autocomplete'),  //or whatever permission makes sense
+    'type' => MENU_CALLBACK
+  );
+
+  $items['producers/autocomplete'] = array(
+    'title' => 'Autocomplete for Producers',
+    'page callback' => 'producers_autocomplete',
+    'access arguments' => array('use autocomplete'),  //or whatever permission makes sense
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/*
+  Menu Callbacks
+*/
+function add_actor_callback() {
+  $build['add_actor'] = drupal_get_form('add_actor_form');
+  return $build;  
+}
+
+function add_producer_callback() {
+  $build['add_producer'] = drupal_get_form('add_producer_form');
+  return $build;  
+}
+
+function add_movie_callback() {
+  $build['add_producer'] = drupal_get_form('add_movie_form');
+  return $build;  
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function movies_views_api()
+{ 
+    return array(
+        'api' => 3.0,
+        'path' => drupal_get_path('module', 'movies') . '/views',
+    );
+}
+
+/*
+  Form Callbacks
+*/
+
+/*
+  Add Actor Form
+*/
+function add_actor_form($form, &$form_state) {
+
+  $form['actor_name'] = array(
+
+    '#type' => 'textfield', 
+    '#title' => t('Actor Name'),  
+    '#size' => 50,
+    '#maxlength' => 50,
+    '#required' => TRUE,
+
+  );
+
+  $form['actor_gender'] = array(
+
+    '#type' => 'radios',
+    '#title' => t('Gender'),
+    '#options' => array('Male' => 'Male', 'Female' => 'Female'),
+    '#default_value' => 'Male',
+    '#required' => TRUE,
+
+  );
+
+  $form['actor_dob'] = array(
+    '#type' => 'date_popup',
+    '#date_label_position' => '',
+    '#title' => t('DOB'),
+    '#date_format' => 'm/d/Y',
+    '#default_value' => 'YYYY-MM-DD 00:00:00',
+    // '#date_year_range' => '0:+3',
+    '#size' => 12,
+    '#required' => true,
+  );
+
+  $form['actor_bio'] = array(
+    '#type' => 'textarea',
+    '#title' => t('BIO'),
+    '#required' => TRUE,
+  );
+
+  $form['submit_button'] = array(
+     '#type' => 'submit',
+     '#value' => t('Add Actor'),
+  );
+  
+  return $form;
+}
+
+function add_actor_form_validate($form, &$form_state) {
+  
+}
+
+function add_actor_form_submit($form, &$form_state) {
+
+  db_insert('actors')
+      ->fields(array(
+        'actor_name' => $form_state['values']['actor_name'], 
+        'actor_gender' => $form_state['values']['actor_gender'],
+        'actor_dob' => $form_state['values']['actor_dob'],   
+        'actor_bio' => $form_state['values']['actor_bio'],       
+      ))->execute();
+  drupal_set_message('Actor Added Sucessfully'); 
+
+}
+
+/*
+  Add Producer Form
+*/
+function add_producer_form($form, &$form_state) {
+
+  $form['producer_name'] = array(
+
+    '#type' => 'textfield', 
+    '#title' => t('Producer Name'),  
+    '#size' => 50,
+    '#maxlength' => 50,
+    '#required' => TRUE,
+
+  );
+
+  $form['producer_gender'] = array(
+
+    '#type' => 'radios',
+    '#title' => t('Gender'),
+    '#options' => array('Male' => 'Male', 'Female' => 'Female'),
+    '#default_value' => 'Male',
+    '#required' => TRUE,
+
+  );
+
+  $form['producer_dob'] = array(
+    '#type' => 'date_popup',
+    '#date_label_position' => '',
+    '#title' => t('DOB'),
+    '#date_format' => 'm/d/Y',
+    '#default_value' => 'YYYY-MM-DD 00:00:00',
+    // '#date_year_range' => '0:+3',
+    '#size' => 12,
+    '#required' => true,
+  );
+
+  $form['producer_bio'] = array(
+    '#type' => 'textarea',
+    '#title' => t('BIO'),
+    '#required' => TRUE,
+  );
+
+  $form['submit_button'] = array(
+     '#type' => 'submit',
+     '#value' => t('Add Flowers'),
+  );
+  
+  return $form;
+}
+
+function add_producer_form_validate($form, &$form_state) {
+  
+}
+
+function add_producer_form_submit($form, &$form_state) {
+
+  db_insert('producers')
+      ->fields(array(
+        'producer_name' => $form_state['values']['producer_name'], 
+        'producer_gender' => $form_state['values']['producer_gender'],
+        'producer_dob' => $form_state['values']['producer_dob'],   
+        'producer_bio' => $form_state['values']['producer_bio'],       
+      ))->execute();
+  drupal_set_message("Producer Added Sucessfully"); 
+
+}
+
+/*
+  Add Movie Form
+*/
+function add_movie_form($form, &$form_state) {
+
+  $form['movie_name'] = array(
+
+    '#type' => 'textfield', 
+    '#title' => t('Movie Name'),  
+    '#size' => 50,
+    '#maxlength' => 50,
+    '#required' => TRUE,
+
+  );
+
+  $form['movie_year_release'] = array(
+    '#type' => 'date_popup',
+    '#date_label_position' => '',
+    '#title' => t('Year of release'),
+    '#date_format' => 'm/d/Y',
+    '#default_value' => 'YYYY-MM-DD 00:00:00',
+    // '#date_year_range' => '0:+3',
+    '#size' => 12,
+    '#required' => true,
+  );
+
+  $form['movie_plot'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Plot'),
+    '#required' => TRUE,
+  );
+
+  $form['movie_poster'] = array(
+    '#type' => 'managed_file',
+    '#name' => 'movie_poster',
+    '#title' => t('Movie Poster'),
+    '#description' => t('Upload a file, allowed extensions: jpg, jpeg, png, gif'),
+    '#upload_location' => 'public://'
+  );
+
+  $form['movie_actors'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Actors',
+    '#maxlength' => 128,
+    '#multiple' => TRUE,
+    '#attributes' => array('placeholder'=>'please enter comma seperated values eg abc,def'),
+    '#autocomplete_path' => 'actors/autocomplete',
+  );
+
+  $form['movie_producer'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Producer',
+    '#maxlength' => 128,
+    '#autocomplete_path' => 'producers/autocomplete',
+  );
+
+  $form['submit_button'] = array(
+     '#type' => 'submit',
+     '#value' => t('Add Movie'),
+  );
+  
+  return $form;
+}
+
+function add_movie_form_validate($form, &$form_state) {
+  
+}
+
+function add_movie_form_submit($form, &$form_state) {
+
+  if (isset($form_state['values']['movie_poster'])) {
+
+    $file = file_load($form_state['values']['movie_poster']);
+    $file->status = FILE_STATUS_PERMANENT;
+    file_save($file);
+    $producer_id = movies_fetch_id($form_state['values']['movie_producer'],'producers','producer_name');
+    $actor_id = movies_fetch_id($form_state['values']['movie_actors'],'actors','actor_name');
+    $movie_id = db_insert('movies')
+                ->fields(array(
+                  'movie_name' => $form_state['values']['movie_name'], 
+                  'movie_producer' => $producer_id,
+                  'movie_year_release' => $form_state['values']['movie_year_release'],
+                  'movie_plot' => $form_state['values']['movie_plot'],   
+                  'movie_poster' => $file->fid,        
+                ))->execute();
+    if (is_array($actor_id)) {
+      for ($i=0; $i < sizeof($actor_id); $i++) { 
+        db_insert('movies_related_actors')
+        ->fields(array(
+          'movie_id' => $movie_id, 
+          'actor_id' => $actor_id[$i],      
+        ))->execute();
+      }
+    }else {
+      db_insert('movies_related_actors')
+      ->fields(array(
+        'movie_id' => $movie_id, 
+        'actor_id' => $actor_id,      
+      ))->execute();
+    }
+    drupal_set_message("Movie Added Sucessfully"); 
+  } else {
+    drupal_set_message("You didn't select the product"); 
+  }
+
+  
+
+}
+
+
+/**
+ * autocomplete helper
+ * $string = string for search
+ */
+function actors_autocomplete($string) {
+  $prefix = "";
+  if (strpos( $string, ',' ) !== false) {
+    $values = explode(',', $string);
+    $string = array_pop($values);
+    $prefix = implode(', ', $values);
+  }
+  $matches = array();
+  $result = db_select('actors', 'a')
+    ->fields('a', array('actor_name','actor_id'))
+    ->condition('actor_name', '%' . db_like($string) . '%', 'LIKE')
+    ->execute();
+
+  // save the query to matches
+  foreach ($result as $row) {
+    $value = !empty($prefix) ? $prefix . ', ' . $row->actor_name.'('.$row->actor_id.')' : $row->actor_name.'('.$row->actor_id.')';
+    $matches[$value] = check_plain($value);
+  }
+
+  // Return the result to the form in json
+  drupal_json_output($matches);
+}
+
+function producers_autocomplete($string) {
+  $matches = array();
+  $result = db_select('producers', 'p')
+    ->fields('p', array('producer_name','producer_id'))
+    ->condition('producer_name', '%' . db_like($string) . '%', 'LIKE')
+    ->execute();
+
+  // save the query to matches
+  foreach ($result as $row) {
+    $matches[$row->producer_name.'('.$row->producer_id.')'] = check_plain($row->producer_name.'('.$row->producer_id.')');
+  }
+
+  // Return the result to the form in json
+  drupal_json_output($matches);
+}
+
+/*
+  Getting ids from the values in autocomplete
+*/
+function movies_fetch_id($value,$table,$key) {
+  if (!empty($value)){
+    if (strpos( $value, ',' )){
+      $ids = array();
+      $remove_comma = explode(',', $value);
+      for ($i=0; $i < sizeof($remove_comma); $i++) { 
+        if (strpos( $remove_comma[$i], '(' )) {
+          $array = explode("(", $remove_comma[$i]);
+          $id = explode(")", $array[1]);
+          array_push($ids, $id[0]);
+        }else {
+          $actor_id = db_insert($table)
+                      ->fields(array(
+                        $key => $remove_comma[$i],      
+                      ))->execute();
+          array_push($ids, $actor_id);
+        } 
+
+      }
+      return $ids;  
+    }
+    else {
+      if (strpos( $value, '(' )) {
+        $array = explode("(", $value);
+        $id = explode(")", $array[1]);
+        return trim($id[0]); 
+      }
+      else {
+        $id = db_insert($table)
+                    ->fields(array(
+                      $key => $value,      
+                    ))->execute();
+        return trim($id); 
+      }        
+    }
+  }
+  else {
+    return $value;
+  }
+  
+}
