@@ -1,0 +1,65 @@
+<?php
+
+ function flower_bouquet_schema() {
+	$schema = array();
+	$schema['flower'] = array(
+		'description' => t('Flower table'),
+		'fields' => array(
+			'id' => array(
+				'description' => t('Primary key for flower table'),
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+			),
+			'name' => array(
+				'description' => t('Flower Name'),
+				'type' => 'varchar',
+				'not null' => FALSE,
+				'length' => 20,
+				),
+			'color' => array(
+				'description' => t('Color of the flower'),
+				'type' => 'varchar',
+				'length' => '15',
+				'not null' => FALSE,
+			),
+		),
+		'primary key' => array('id'),
+	);
+  
+  $schema['bouquet'] = array(
+  	'description' => t('Bouquet Creation'),
+  	'fields' => array(
+  		'bid' => array(
+  			'description' => t('ID for bouquet'),
+  			'type' => 'serial',
+  			'not null' => TRUE,
+  			'unsigned' => TRUE,
+  		),
+
+  		'name' => array(
+  			'description' => t('Bouquet name'),
+  			'type' => 'varchar',
+  			'length' => 20,
+  			'not null' => FALSE,
+  		),
+      
+      'id' => array(
+        'description' => t('flower id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+      
+      'qty' => array(
+    		'description' => t('Number of flowers to added into the bouquet'),
+    		'type' => 'int',
+    		'unsigned' => TRUE,
+    		'not null' => FALSE,
+    	),
+  	),	
+  	'primary key' => array('id'),
+  );
+
+      
+  return $schema;
+}

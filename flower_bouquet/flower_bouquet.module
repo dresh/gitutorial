@@ -1,0 +1,416 @@
+<?php
+function  flower_bouquet_menu(){
+  $items = array();
+  
+   $items['create_flower'] = array(
+    'title' => 'Create Flower',
+    'access callback' => TRUE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flower_bouquet_create_flower_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'menu' => 'navigation',
+  );
+   
+ $items['flowers_view'] = array(
+     'title' => 'View Flowers',
+     'type' => MENU_NORMAL_ITEM,
+     'menu' => 'navigation',
+     'page callback' =>'flower_bouquet_view_flower_form',
+     'access arguments' => array('access flowers'),
+
+   );
+   
+   $items['flower/%/delete'] = array(
+    'title' => 'Delete Flower',
+    'access callback' => TRUE,
+    'page callback' => 'flower_bouquet_flower_delete_form',
+    'page arguments' => array(1),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+
+   );
+  
+   $items['update_flower_qty/%'] = array(
+     'title' => "Update Flower Qty",
+     'page callback' => 'drupal_get_form',
+     'page arguments' => array('flower_bouquet_flower_update_qty_form', 1),
+     'access callback' => TRUE,
+      'type' => MENU_NORMAL_ITEM,
+     'menu' => 'navigation',
+   );
+   
+   $items['create_bouquet'] = array(
+    'title' => 'Create Bouquet',
+    'access callback' => TRUE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flower_bouquet_create_bouquet_form'),
+    'type' => MENU_NORMAL_ITEM,
+    'menu' => 'navigation',
+  );
+   
+   $items['bouquets_view'] = array(
+     'title' => 'View Bouquets',
+     'type' => MENU_NORMAL_ITEM,
+     'menu' => 'navigation',
+     'page callback' =>'bouquets_view',
+     'access arguments' => array('access_flower_bouquet'),
+   );
+  
+  $items['add_flower_bouquet/%'] = array(
+     'title' => 'Add flower',
+     'page callback' =>'drupal_get_form',
+     'page arguments' => array('flower_bouquet_add_flower_bouquet_form',1),
+     'access callback' => TRUE,
+     'type' => MENU_NORMAL_ITEM,
+     'menu' => 'navigation',
+    
+  );
+
+   $items['bouquet/%/delete'] = array(
+     'title' => 'Delete bouquet',
+     'type' => MENU_DEFAULT_LOCAL_TASK,
+     'page callback' =>'bouquet_delete',
+     'page arguments' => array(1),
+     //'access arguments' => array('access flower_bouquet'),
+     'access callback'=> TRUE,
+   );
+
+  return $items;
+}
+
+function flower_bouquet_create_flower_form($form, &$form_state){
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Flower name',
+   '#size' => 30,
+    '#maxlength' => 30,
+    '#required' => TRUE, 
+  );
+
+
+ $form['color'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Flower Color',
+   '#size' => 30,
+    '#maxlength' => 30,
+    '#required' => TRUE, 
+  );
+
+ $form['qty'] = array(
+   '#type' => 'textfield',
+   '#title' => 'Qty',
+   '#required' => TRUE,
+ );
+ 
+  $form['price'] = array(
+   '#type' => 'textfield',
+   '#title' => 'Price(1Pc)',
+   '#required' => TRUE,
+ );
+
+$form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    
+  );
+
+  return $form;
+}
+
+function flower_bouquet_create_flower_form_validate($form, &$form_state) {
+}
+
+function flower_bouquet_create_flower_form_submit($form, &$form_state) {
+db_insert('flower') 
+		->fields(array(  
+			'color' => $form_state['values']['color'],  
+			'name' => $form_state['values']['name'],
+      'qty' => $form_state['values']['qty'],
+      'price' => $form_state['values']['price'],
+		))
+		->execute();
+drupal_set_message(t('Flower has been added!!!'));
+drupal_goto('flowers_view');
+}
+
+
+function flower_bouquet_view_flower_form(){
+  $query=db_select('flower','f');
+  $header=array(t('Flower'),t('Color'),t('Stock'), t('Price(1Pc)') ,t('Delete'), t('Update Qty'));
+$results = $query
+    ->fields('f',array('name','color', 'qty','price', 'id'))
+    ->condition('flag', 1)
+    ->execute();
+$rows = array();
+
+  foreach($results AS $result) {
+    $rows[] = array(
+    t($result->name),
+    t($result->color),
+      t($result->qty),
+      t($result->price),
+      l('Delete','flower/'.$result->id.'/delete'),
+      l('Edit Qty', 'update_flower_qty/'.$result->id),
+    );
+  }
+
+  return theme('table', array('header' => $header, 'rows' => $rows));
+}
+
+function flower_bouquet_flower_delete_form($item){
+  $query = db_update('flower')
+    ->fields(array('flag' => 0))
+    ->condition('id', $item, '=')
+    ->execute();
+    drupal_set_message(t('Flowers has been deleted!'));
+    drupal_goto('flowers_view');
+} 
+
+function flower_bouquet_flower_update_qty_form($form, &$form_state, $item){
+  $form['id'] = array(
+    '#type' => 'hidden',
+    '#value' => t($item),
+  );
+  $form['qty'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Qty',
+    '#required' => TRUE,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+  return $form;
+}
+
+function flower_bouquet_flower_update_qty_form_validate($form, &$form_state){
+}
+
+function flower_bouquet_flower_update_qty_form_submit($form, &$form_state){
+  $id  = $form_state['values']['id'];
+  $qty = $form_state['values']['qty'];
+  $sel = db_select('flower', 'f') ->fields('f', array('qty')) ->condition('id', $id, '=') ->execute() ->fetch();
+  $qty = $qty + ($sel->qty);
+  $res = db_update('flower') ->fields(array('qty' => $qty)) ->condition('id', $id, '=') ->execute();
+  drupal_set_message('Qty is updated');
+  drupal_goto('flowers_view');
+}
+
+function flower_bouquet_create_bouquet_form($form, &$form_state) {
+  
+ $form['uname'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Your Name',
+    '#size' => 30,
+    '#maxlength' => 30,
+    '#required' => TRUE, 
+  );
+ $form['addr'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Your Address',
+    //'#size' => 30,
+    //'#maxlength' => 30,
+    '#required' => TRUE, 
+  );
+  $form['phone'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Your Phone number',
+    '#required' => TRUE, 
+  );
+  
+ $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Your Bouquet name',
+    '#size' => 30,
+    '#maxlength' => 30,
+    '#required' => TRUE, 
+  );
+
+$form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    
+  );
+
+  return $form;
+}
+
+
+
+function flower_bouquet_create_bouquet_form_validate($form, &$form_state) {
+}
+function flower_bouquet_create_bouquet_form_submit($form, &$form_state) {
+$id = db_insert('bouquet') 
+		->fields(array(  
+      'uname' => $form_state['values']['name'],
+      'address' => $form_state['values']['addr'],
+      'phone' => $form_state['values']['phone'],
+			'name' => $form_state['values']['name'], 
+      'date' => $form_state[date('Y-m-d h:i:s')],
+		))
+		->execute();
+//drupal_set_message(t($id));
+//drupal_set_message(t('Bouquet has been created!!!'));
+drupal_goto('add_flower_bouquet/'.$id);
+}
+
+function flower_bouquet_add_flower_bouquet_form($form, &$form_state, $id=0){
+   $form['field_container'] = array(
+    '#type' => 'container',
+    '#weight' => 80,
+    '#tree' => TRUE,
+    // Set up the wrapper so that AJAX will be able to replace the fieldset.
+    '#prefix' => '<div id="js-ajax-elements-wrapper">',
+    '#suffix' => '</div>',
+  );
+ $form_state['field_deltas'] = isset($form_state['field_deltas']) ? $form_state['field_deltas'] : range(0, 0);
+ $field_count = $form_state['field_deltas'];  
+ foreach ($field_count as $delta) {
+  $form['field_container'][$delta] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['container-inline'],
+      ],
+      '#tree' => TRUE,
+    ];
+  $form['field_container'][$delta]['bid'] = array(
+    '#type' => 'hidden',
+    '#value' => t($id),
+      );
+  $result = db_select('flower', 'f')->fields('f', array('id', 'name','color')) ->condition('flag', 1, '=') ->execute()->fetchAll();
+  $options = array();
+  foreach ($result as $value) {
+  $options[$value->id] = $value->name.' '. $value->color;
+  }
+$form['field_container'][$delta]['flower'] = array(
+  '#type' => 'select',
+  '#title' => 'Select Flower',
+  '#options' => $options,
+  '#required' => TRUE,
+);
+ $form['field_container'][$delta]['qty'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Qty',
+    '#required' => TRUE, 
+    '#size' => 10,
+  );
+  //dpm($form_state['values']);
+ 
+ }
+ $form['field_container']['add_name'] = [
+    '#type' => 'submit',
+    '#value' => t('Add one more'),
+    '#submit' => ['flower_bouquet_ajax_add_more_add_one'],
+    '#ajax' => [
+      'callback' => 'flower_bouquet_ajax_add_more_add_one_callback',
+      'wrapper' => 'js-ajax-elements-wrapper',
+    ],
+    '#weight' => 100,
+  ];
+ 
+  $form['field_container']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    //'#submit' => ['flower_bouquet_add_flower_bouquet_form_submit'],
+    
+  );
+  return $form;  
+} 
+
+
+function flower_bouquet_ajax_add_more_add_one($form, &$form_state) {
+  $form_state['field_deltas'][] = count($form_state['field_deltas']) > 0 ? max($form_state['field_deltas']) + 1 : 0;
+  $form_state['rebuild'] = TRUE;
+  drupal_get_messages();
+  
+}
+
+function flower_bouquet_ajax_add_more_add_one_callback($form, &$form_state) {
+  for($i=0; $i<sizeof($form_state);$i++){
+  $id = $form_state['values']['field_container'][$i]['flower'];
+  $qty = $form_state['values']['field_container'][$i]['qty'];
+  $res = db_select('flower', 'f') ->fields('f', array('id','qty' )) ->condition('id', $id, '=') ->execute() ->fetch();
+  if (($res->qty) < $qty){
+   dpm(t($qty.' flowers is not available'));
+   return;
+  }
+  }
+   return $form['field_container']; 
+}
+
+function flower_bouquet_add_flower_bouquet_form_validate($form, &$form_state) {
+}
+function flower_bouquet_add_flower_bouquet_form_submit($form, &$form_state) {
+  $row = $form_state['values']['field_container'];
+  $var =  $form_state['values']['bid'];
+  $len = sizeof($row);
+  $count = 1;
+  $total_price = 0;
+  foreach ($row as $item) { 
+    if($count < $len-1){
+//    dpm($item['flower']);
+//    dpm($item['qty']);
+//    dpm($item['bid']);
+     $id = $item['flower'];
+     $qty = $item['qty'];
+     $res = db_select('flower', 'f') ->fields('f', array('qty', 'price')) ->condition('id', $id, '=') ->execute() ->fetch();
+     $total_price = $total_price + ($res->price * $item['qty']);
+     if($total_price < 500){
+       //drupal_set_message('Your bouquet cost exceeded 500rs, Sorry bouquet is not created.');
+       drupal_goto('add_flower_bouquet/'.$item['bid']);   
+       db_insert('bouquet_flower') 
+		   ->fields(array(  
+         'id' => $item['flower'],
+         'qty' => $item['qty'],
+         'bid' => $item['bid'],  
+		   ))
+		   ->execute();    
+       $qty = ($res->qty) - $qty; 
+       db_update('flower')
+       ->fields(array('qty' => $qty))
+       ->condition('id', $id, '=')
+       ->execute();
+     }
+  }
+ $count++;
+ } 
+drupal_set_message('Bouquet has been created. And bouquet cost is '.$total_price);
+drupal_goto('create_bouquet');
+}
+
+
+function bouquets_view(){
+  $query=db_select('bouquet','f');
+  $query->innerJoin('bouquet_flower', 'fb', 'f.bid=fb.bid');
+  $query->innerJoin('flower','fs','fb.id=fs.id');
+  $query->addField('fs','name','fname');
+  $query->addField('fs', 'color', 'fcolor');
+  $query->addField('fb', 'qty', 'qty');
+  $header=array(t('Bouquet name'),t('Flower'),t('Qty'),t('Delete'));
+  $results = $query
+  ->fields('f',array('uname', 'name', 'bid'))
+  ->distinct('f.name')
+  ->condition('f.flag', 1)
+  ->execute();
+$rows = array();
+  foreach($results AS $result) {
+    $rows[] = array(
+      //t($result->uname),
+      t($result->name),
+      t($result->fname.' '.$result->fcolor),
+      t($result->qty),
+      l('Delete','bouquet/'.$result->bid.'/delete'),
+    );
+  }
+
+  return theme('table', array('header' => $header, 'rows' => $rows));
+}
+
+function bouquet_delete($item){
+$query = db_update('bouquet')
+    ->fields(array('flag' => 0))
+    ->condition('bid', $item, '=')
+    ->execute();
+drupal_set_message(t('Bouquet has been deleted!'));
+drupal_goto('bouquets_view');
+}
+
